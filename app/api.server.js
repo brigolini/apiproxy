@@ -11,8 +11,8 @@ const { combine, timestamp, printf } = format;
 
 const apiProxy = express();
 
-//let mode = "LEARNING";
-let mode = "CACHE";
+let mode = "LEARNING";
+//let mode = "CACHE";
 
 const simpleFormat = printf(({ level, message, label, timestamp }) => {
     return `${timestamp} ${level}: ${message}`;
@@ -44,21 +44,8 @@ apiProxy.use("/fake-api", proxy('https://dev.stafftrack.net', {
             couch.addCall(userReq.url, data);
             return JSON.stringify(data);
         }
-        //couch.addCall(userReq.url, {});
         return JSON.stringify({});
-/*
-        const data = JSON.parse(proxyResData.toString('utf8'));
-        //couch.addCall(userReq.url, data);
-        data.fromProxy = true;
-        return JSON.stringify(data);
-*/
-        //return userRes;
     },
-    userResHeaderDecorator(headers, userReq, userRes, proxyReq, proxyRes) {
-        //const data = JSON.parse(proxyResData.toString('utf8'));
-        //couch.addCall(userReq.url, data);
-        return headers;
-    }
 }))
 
 apiProxy.get("/mode/:newMode",
