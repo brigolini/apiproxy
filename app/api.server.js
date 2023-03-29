@@ -32,7 +32,7 @@ const corsOptions = {
     credentials: true
 };
 apiProxy.use(cors(corsOptions));
-apiProxy.use("/fake-api", proxy('https://dev.stafftrack.net', {
+apiProxy.use("/fake-api", proxy('https://stage.stafftrack.net', {
     filter: function (req, res) {
         return mode === "LEARNING";
     },
@@ -41,7 +41,7 @@ apiProxy.use("/fake-api", proxy('https://dev.stafftrack.net', {
         const rawData = proxyResData.toString('utf8');
         if (rawData !== ""){
             const data = JSON.parse(rawData);
-            couch.addCall(userReq.url, data);
+            couch.addCall(userReq.url, {status:200, data});
             return JSON.stringify(data);
         }
         return JSON.stringify({});
@@ -67,13 +67,10 @@ apiProxy.get("/mode/:newMode",
 })*/
 
 
-apiProxy.all("/fake-api/*",
-    async function (req, res, next){
+apiProxy.all("/fake-api/*", async (req, res) =>{
     logger.info(`Using proxy for ${req.url}`);
-    const data = await couch.retrieveCall(req.url.replace("/fake-api",""))
-    if (data.hasOwnProperty("returnCode")){
-        return res.json(data).status(200);
-    }
+    const record = await couch.retrieveCall(req.url.replace("/fake-api",""))
+    return res.status(record.status).json(record.data);
 })
 
 
