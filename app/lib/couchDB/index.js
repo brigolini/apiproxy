@@ -1,59 +1,24 @@
-const NodeCouchDb = require('node-couchdb');
+const fs = require("fs");
 
+const dbFile = "endpoints.json";
 
-const databaseName = "proxy";
-const couch = new NodeCouchDb({
-    auth: {
-        user: "admin",
-
-    }
-});
+let calls = [];
 
 module.exports = {
-    getAvailableDatabases: async function () {
-        return await couch.listDatabases()
+    addCall: function (endpoint, message, logger) {
+       if (!calls.find(item=>item.endpoint === endpoint)){
+           calls = [...calls, {endpoint, ...message}];
+           fs.writeFileSync(dbFile, JSON.stringify(calls),()=>{
+               logger.error(`Error on save data at ${dbFile}`)
+           });
+       }
     },
-    init: async function () {
-        const dbs = await couch.listDatabases();
-        if (dbs.length === 0) {
-            await couch.createDatabase(databaseName);
-            return "DB was created";
+    retrieveCall: function (endpoint, body) {
+        if (calls.length === 0){
+            const data = JSON.parse(fs.readFileSync(dbFile).toString());
+            calls= [...calls, ...data ];
         }
-        return "DB already existed"
-    },
-    addDatabase: async function () {
-        return couch.createDatabase(databaseName);
-    },
-    addCall: async function (endpoint, body) {
-        const mangoQuery = {
-            selector: {
-                _id: {
-                    $eq: endpoint
-                }
-            }
-        };
-            const result = await couch.mango(databaseName, mangoQuery);
-            if (result.data.docs.length === 0){
-                // query not found, let me add it
-                couch.insert(databaseName, {
-                    _id: endpoint,
-                    field: body
-                })
-            }
-    },
-    retrieveCall: async function (endpoint, body) {
-        const mangoQuery = {
-            selector: {
-                _id: {
-                    $eq: endpoint
-                }
-            }
-        };
-        const result = await couch.mango(databaseName, mangoQuery);
-        if (result.data.docs.length > 0){
-            return result.data.docs[0].field;
-        }
-        return {}
+        return calls.find(item=>item.endpoint === endpoint);
     }
 
 }

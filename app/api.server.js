@@ -11,8 +11,8 @@ const { combine, timestamp, printf } = format;
 
 const apiProxy = express();
 
-let mode = "LEARNING";
-//let mode = "CACHE";
+//let mode = "LEARNING";
+let mode = "CACHE";
 
 const simpleFormat = printf(({ level, message, label, timestamp }) => {
     return `${timestamp} ${level}: ${message}`;
@@ -69,7 +69,7 @@ apiProxy.get("/mode/:newMode",
 
 apiProxy.all("/fake-api/*", async (req, res) =>{
     logger.info(`Using proxy for ${req.url}`);
-    const record = await couch.retrieveCall(req.url.replace("/fake-api",""))
+    const record = couch.retrieveCall(req.url.replace("/fake-api",""))
     return res.status(record.status).json(record.data);
 })
 
@@ -77,9 +77,7 @@ apiProxy.all("/fake-api/*", async (req, res) =>{
 
 const port = process.env.API_PORT || 3003;
 
-couch.init().then(()=>{
-    apiProxy.listen(port, () => {
-        logger.info(`Proxy Api is running on port ${port}`);
-    });
-})
+apiProxy.listen(port, () => {
+    logger.info(`Proxy Api is running on port ${port}`);
+});
 
