@@ -4,4 +4,4 @@ node_modules
 /build
 /public/build
 .env
-endpoints.json_old
+endpoints.json*
