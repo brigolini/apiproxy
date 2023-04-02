@@ -5,14 +5,16 @@ const { format } = require('winston');
 const couch = require("./lib/couchDB");
 var cors = require('cors')
 require("dotenv").config()
+const fs = require("fs");
 
 const { combine, timestamp, printf } = format;
-
+let requestResolvers = [];
+let responseResolvers = [];
 
 const apiProxy = express();
 
-let mode = "LEARNING";
-//let mode = "CACHE";
+//let mode = "LEARNING";
+let mode = "CACHE";
 
 const simpleFormat = printf(({ level, message, label, timestamp }) => {
     return `${timestamp} ${level}: ${message}`;
@@ -72,15 +74,34 @@ apiProxy.get("/mode/:newMode",
 
 
 apiProxy.all(`/${process.env.PROXY_SEGMENT}/*`, async (req, res) =>{
-    logger.info(`Using proxy for ${req.url}`);
-    const record = couch.retrieveCall(req.url.replace(`/${process.env.PROXY_SEGMENT}`,""))
-    return res.status(record.status).json(record.data);
+    responseResolvers.forEach(resolver=>{
+        if (resolver.canResolve(req)){
+            logger.info(`Proxying ${req.url} with resolver: ${resolver.getName()}`)
+            return resolver.resolve(req, res, couch)
+        }
+    })
 })
 
+const addResolvers = (type) => {
+    const resolverFiles = fs.readdirSync(`${process.env.RESOLVER_FOLDER}/${type}`);
+    console.info(resolverFiles);
+    let result = [];
+    resolverFiles.forEach(file => {
+        const js = require(`${process.env.RESOLVER_FOLDER}/${type}/${file}`);
+        if (js.getName){
+            result = [js, ...result];
+        }
+    })
+    return result;
+}
 
 
 const port = process.env.API_PORT || 3003;
-
+logger.info(`Getting ready to add resolvers from folder ${process.env.RESOLVER_FOLDER}`);
+logger.info(`Adding request resolvers`);
+requestResolvers = addResolvers("request");
+logger.info(`Adding response resolvers`);
+responseResolvers = addResolvers("response");
 apiProxy.listen(port, () => {
     logger.info(`Proxy Api is running on port ${port}`);
 });
