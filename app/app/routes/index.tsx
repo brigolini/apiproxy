@@ -1,32 +1,31 @@
-export default function Index() {
+import {Link, Outlet} from '@remix-run/react';
+
+export default function () {
   return (
-    <div style={{ fontFamily: "system-ui, sans-serif", lineHeight: "1.4" }}>
-      <h1>Welcome to Remix</h1>
-      <ul>
-        <li>
-          <a
-            target="_blank"
-            href="https://remix.run/tutorials/blog"
-            rel="noreferrer"
-          >
-            15m Quickstart Blog Tutorial
-          </a>
-        </li>
-        <li>
-          <a
-            target="_blank"
-            href="https://remix.run/tutorials/jokes"
-            rel="noreferrer"
-          >
-            Deep Dive Jokes App Tutorial
-          </a>
-        </li>
-        <li>
-          <a target="_blank" href="https://remix.run/docs" rel="noreferrer">
-            Remix Docs
-          </a>
-        </li>
-      </ul>
-    </div>
+    <>
+      <div>
+        <h1>Proxy API</h1>
+        <ul>
+          <li>
+            <Link to="Mode" >
+              Mode
+            </Link>
+          </li>
+          <li>
+            <Link to="Endpoints">
+              Endpoints
+            </Link>
+          </li>
+          <li>
+            <Link to="RequestLogs">
+              Request Logs
+            </Link>
+          </li>
+        </ul>
+      </div>
+      <div>
+        <Outlet />
+      </div>
+    </>
   );
 }
