@@ -4,15 +4,15 @@ const winston = require('winston');
 const { format } = require('winston');
 const couch = require("./lib/couchDB");
 var cors = require('cors')
-
+require("dotenv").config()
 
 const { combine, timestamp, printf } = format;
 
 
 const apiProxy = express();
 
-//let mode = "LEARNING";
-let mode = "CACHE";
+let mode = "LEARNING";
+//let mode = "CACHE";
 
 const simpleFormat = printf(({ level, message, label, timestamp }) => {
     return `${timestamp} ${level}: ${message}`;
@@ -27,12 +27,16 @@ const logger = winston.createLogger({
     )
 });
 
+logger.info("Using the follow env files");
+console.info(`Proxy segment: /${process.env.PROXY_SEGMENT}/*`);
+console.info(`Destination: ${process.env.DESTINATION}`);
+
 const corsOptions = {
     origin: "http://localhost:8080",
     credentials: true
 };
 apiProxy.use(cors(corsOptions));
-apiProxy.use("/fake-api", proxy('https://stage.stafftrack.net', {
+apiProxy.use(`/${process.env.PROXY_SEGMENT}`, proxy(process.env.DESTINATION, {
     filter: function (req, res) {
         return mode === "LEARNING";
     },
@@ -67,9 +71,9 @@ apiProxy.get("/mode/:newMode",
 })*/
 
 
-apiProxy.all("/fake-api/*", async (req, res) =>{
+apiProxy.all(`/${process.env.PROXY_SEGMENT}/*`, async (req, res) =>{
     logger.info(`Using proxy for ${req.url}`);
-    const record = couch.retrieveCall(req.url.replace("/fake-api",""))
+    const record = couch.retrieveCall(req.url.replace(`/${process.env.PROXY_SEGMENT}`,""))
     return res.status(record.status).json(record.data);
 })
 
