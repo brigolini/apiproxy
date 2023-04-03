@@ -6,7 +6,7 @@ module.exports = {
         const rawData = proxyResData.toString('utf8');
         if (rawData !== ""){
             const data = JSON.parse(rawData);
-            couch.addCall(userReq.url, {status:200, data});
+            couch.addCall(userReq.url, {status:200, method:"GET", data});
             return JSON.stringify(data);
         }
         return JSON.stringify({});

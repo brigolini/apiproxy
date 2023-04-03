@@ -54,17 +54,23 @@ apiProxy.use(`/${process.env.PROXY_SEGMENT}`, proxy(process.env.DESTINATION, {
     },
 }))
 
-apiProxy.get("/mode/:newMode",
+apiProxy.put("/mode/toggle",
     function (req, res){
-        logger.info(`Changing mode to ${req.params.newMode}`)
-        if (req.params.newMode !== "LEARNING"
-            &&req.params.newMode !== "CACHE"
-            &&req.params.newMode !== "BOTH"){
-            res.status(212).send(JSON.stringify({result: "Mode does not exist"}))
-        }
-        mode = req.params.newMode;
+        const newMode = mode === "CACHE"?"LEARNING":"CACHE";
+        logger.info(`Changing mode to ${newMode}`)
+
+        mode = newMode;
         res.status(200).send(JSON.stringify({result:"Changed"}))
     })
+
+apiProxy.get("/mode",function(req, res){
+    res.status(200).send(JSON.stringify({mode}))
+})
+
+apiProxy.get("/endpoints",function(req, res){
+    res.status(200).send(JSON.stringify({endpoints:couch.retrieveAll()}))
+})
+
 
 /*apiProxy.post("/fake-api/!*", function (req, res){
     console.info("trying here");

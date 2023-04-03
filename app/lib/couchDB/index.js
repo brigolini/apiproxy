@@ -19,6 +19,9 @@ module.exports = {
             calls= [...calls, ...data ];
         }
         return calls.find(item=>item.endpoint === endpoint);
+    },
+    retrieveAll: function () {
+        return calls;
     }
 
 }
