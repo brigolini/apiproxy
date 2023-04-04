@@ -13,8 +13,8 @@ let responseResolvers = [];
 
 const apiProxy = express();
 
-//let mode = "LEARNING";
-let mode = "CACHE";
+let mode = "LEARNING";
+//let mode = "CACHE";
 
 const simpleFormat = printf(({ level, message, label, timestamp }) => {
     return `${timestamp} ${level}: ${message}`;
@@ -30,8 +30,8 @@ const logger = winston.createLogger({
 });
 
 logger.info("Using the follow env files");
-console.info(`Proxy segment: /${process.env.PROXY_SEGMENT}/*`);
-console.info(`Destination: ${process.env.DESTINATION}`);
+logger.info(`Proxy segment: /${process.env.PROXY_SEGMENT}/*`);
+logger.info(`Destination: ${process.env.DESTINATION}`);
 
 const corsOptions = {
     origin: "http://localhost:8080",
@@ -43,14 +43,15 @@ apiProxy.use(`/${process.env.PROXY_SEGMENT}`, proxy(process.env.DESTINATION, {
         return mode === "LEARNING";
     },
     userResDecorator: function (proxyRes, proxyResData, userReq, userRes) {
-        logger.info(`Intercepting ${userReq.url}`);
-        const rawData = proxyResData.toString('utf8');
-        if (rawData !== ""){
-            const data = JSON.parse(rawData);
-            couch.addCall(userReq.url, {status:200, data});
-            return JSON.stringify(data);
-        }
-        return JSON.stringify({});
+        logger.info(`Proxy receive URL ${userReq.url}`);
+        requestResolvers.forEach(resolver=>{
+            if (resolver.canResolve(proxyRes, proxyResData, userReq, userRes)){
+                logger.info(`Intercepting ${userReq.url} with resolver: ${resolver.getName()}`);
+                resolver.resolve(proxyRes, proxyResData, userReq, userRes,couch);
+            }
+        })
+        return proxyResData
+
     },
 }))
 
@@ -77,6 +78,7 @@ apiProxy.get("/endpoints",function(req, res){
     console.info(req);
     res.status(200).send('changed')
 })*/
+
 
 
 apiProxy.all(`/${process.env.PROXY_SEGMENT}/*`, async (req, res) =>{
