@@ -7,10 +7,10 @@ const socket = io("http://localhost:3003",{transports: ["websocket"]});
 
 const Endpoint = ({url, method,status, proxyStatus, handleDelete, handleToggleStatus}) => {
     const [editMode, setEditMode] = useState(false);
-    const [fullJSON, setFullJSON] = useState({});
+    const [fullJSON, setFullJSON] = useState("");
     useEffect(() => {
         socket.on("fullJSON", (data) => {
-            setFullJSON(JSON.parse(data));
+            setFullJSON(JSON.stringify(JSON.parse(data), null, 2));
         });
     }, []);
 
@@ -51,9 +51,9 @@ const Endpoint = ({url, method,status, proxyStatus, handleDelete, handleToggleSt
         </div>
         {editMode && <div className="w-full flex justify-start">
             <div className="w-full h-60">
-                <textarea className="w-full h-full" value={JSON.stringify(fullJSON, null, 2)}
+                <textarea className="w-full h-full" value={fullJSON}
                    onChange={(e)=> {
-                       setFullJSON(JSON.parse(e.target.value));
+                       setFullJSON(e.target.value);
                    }}
                 />
             </div>
