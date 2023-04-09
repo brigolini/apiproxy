@@ -1,42 +1,33 @@
 const express = require("express");
 var proxy = require('express-http-proxy');
-const winston = require('winston');
-const { format } = require('winston');
 const couch = require("./lib/couchDB");
 var cors = require('cors')
 require("dotenv").config()
 const fs = require("fs");
+const {startExpressWithSocket} = require("./socket");
+const logger = require("./Logger");
 
-const { combine, timestamp, printf } = format;
 let requestResolvers = [];
 let responseResolvers = [];
-
 const apiProxy = express();
 
 let mode = "LEARNING";
 //let mode = "CACHE";
 
-const simpleFormat = printf(({ level, message, label, timestamp }) => {
-    return `${timestamp} ${level}: ${message}`;
-});
-const logger = winston.createLogger({
-    transports: [
-        new winston.transports.Console(),
-    ],
-    format: combine(
-        timestamp(),
-        simpleFormat
-    )
-});
 
 logger.info("Using the follow env files");
 logger.info(`Proxy segment: /${process.env.PROXY_SEGMENT}/*`);
 logger.info(`Destination: ${process.env.DESTINATION}`);
 
-const corsOptions = {
-    origin: "http://localhost:8080",
-    credentials: true
-};
+const corsOptions = [{
+        origin: "http://localhost:8080",
+        credentials: true
+    },
+    {
+        origin: 'http://localhost:3000',
+        credentials: true
+    }
+];
 apiProxy.use(cors(corsOptions));
 apiProxy.use(`/${process.env.PROXY_SEGMENT}`, proxy(process.env.DESTINATION, {
     filter: function (req, res) {
@@ -51,7 +42,6 @@ apiProxy.use(`/${process.env.PROXY_SEGMENT}`, proxy(process.env.DESTINATION, {
             }
         })
         return proxyResData
-
     },
 }))
 
@@ -110,7 +100,5 @@ logger.info(`Adding request resolvers`);
 requestResolvers = addResolvers("request");
 logger.info(`Adding response resolvers`);
 responseResolvers = addResolvers("response");
-apiProxy.listen(port, () => {
-    logger.info(`Proxy Api is running on port ${port}`);
-});
+startExpressWithSocket(apiProxy, port)
 
