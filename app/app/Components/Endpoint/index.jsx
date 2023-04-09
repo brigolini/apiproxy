@@ -2,6 +2,7 @@ import {MdDeleteOutline, MdEdit, MdOutlineUpdateDisabled} from "react-icons/md";
 import IconButton from "app/Components/Buttons/IconButton";
 import {useEffect, useState} from "react";
 import {io} from "socket.io-client";
+
 const socket = io("http://localhost:3003",{transports: ["websocket"]});
 
 const Endpoint = ({url, method,status, proxyStatus, handleDelete, handleToggleStatus}) => {
@@ -12,6 +13,12 @@ const Endpoint = ({url, method,status, proxyStatus, handleDelete, handleToggleSt
             setFullJSON(JSON.parse(data));
         });
     }, []);
+
+/*    useEffect(()=>{
+        if (editMode === false && fullJSON !== {}) {
+            socket.emit("updateFullJSON", {url, fullJSON});
+        }
+    },[editMode, fullJSON])*/
     return (
     <div className="flex flex-col">
         <div className="flex p-2 border">
@@ -42,7 +49,15 @@ const Endpoint = ({url, method,status, proxyStatus, handleDelete, handleToggleSt
                 </span>
             </div>
         </div>
-        {editMode && <div className="w-full flex justify-start">{fullJSON}</div>}
+        {editMode && <div className="w-full flex justify-start">
+            <div className="w-full h-60">
+                <textarea className="w-full h-full" value={JSON.stringify(fullJSON, null, 2)}
+                   onChange={(e)=> {
+                       setFullJSON(JSON.parse(e.target.value));
+                   }}
+                />
+            </div>
+        </div>}
     </div>
     )
 }

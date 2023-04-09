@@ -28,8 +28,8 @@ const startExpressWithSocket = (app, port) => {
             couch.deleteCall(data.endpoint, logger);
             emitActiveEndpoints(socket);
         });
-        socket.on("edit", (data) => {
-            couch.changeCall(data.endpoint, logger);
+        socket.on("updateFullJSON", (data) => {
+            couch.changeCall(data.url,data.fullJSON, logger);
             emitActiveEndpoints(socket);
         });
         socket.on("getFullJSON",(data) => {
