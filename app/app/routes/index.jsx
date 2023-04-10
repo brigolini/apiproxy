@@ -12,6 +12,7 @@ export default function () {
   socket.on("endpoints", (data) => {
     setEndpoints(JSON.parse(data));
   });
+
   return (
     <>
       <div className="flex flex-col">
@@ -19,18 +20,19 @@ export default function () {
           <h1 className="font-bold text-2xl pt-5">Proxy API</h1>
         </div>
         <div className="flex flex-col pt-5 pl-5">
-          {endpoints.active && endpoints.active.map((item) => <Endpoint
-              url={item.url}
-              method={item.method}
-              status={item.status}
-              proxyStatus={item.proxyStatus}
-              handleDelete={(endpoint)=> {
-                socket.emit("delete", {endpoint});
-              }}
-              handleToggleStatus={(endpoint, status) => {
-                socket.emit("toggleStatus", {endpoint, status});
-              }}
-          />)}
+
+            {endpoints.active && endpoints.active.map((item) => <Endpoint
+                url={item.url}
+                method={item.method}
+                status={item.status}
+                proxyStatus={item.proxyStatus}
+                handleDelete={(endpoint)=> {
+                  socket.emit("delete", {endpoint});
+                }}
+                handleToggleStatus={(endpoint, status) => {
+                  socket.emit("toggleStatus", {endpoint, status});
+                }}
+            />)}
         </div>
 
       </div>
