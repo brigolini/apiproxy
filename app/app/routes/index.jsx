@@ -1,14 +1,20 @@
 import { io } from "socket.io-client";
-import {useState} from 'react';
+import {useEffect, useState} from 'react';
 import Endpoint from "app/Components/Endpoint";
 const socket = io("http://localhost:3003",{transports: ["websocket"]});
 
 export default function () {
   const [endpoints, setEndpoints] = useState([]);
   const [endpointsFiltered, setEndpointsFiltered] = useState([]);
+  const [query, setQuery] = useState("");
   socket.on("connect" , () => {
     console.info(`Connection result: ${socket.connected}`);
   })
+
+  useEffect(() => {
+    const filtered = query !== "" ? endpoints.filter(item=>item.url.toUpperCase().includes(query.toUpperCase()) || (item.status.toString()).includes(query.toUpperCase())) : endpoints;
+    setEndpointsFiltered(filtered);
+  }, [query]);
 
   socket.on("endpoints", (data) => {
     const jsonData = JSON.parse(data);
@@ -26,11 +32,11 @@ export default function () {
           <h1 className="font-bold text-2xl pt-5">Proxy API</h1>
         </div>
         <div className="flex justify-center">
-          <input className="bg-blue-60 w-3/5 border-violet-950 border" onChange={(e)=>setEndpointsFiltered(endpoints.filter(item=>item.endpoint === e.target.value))}/>
+          <input className="bg-blue-60 w-3/5 border-violet-950 border rounded-lg p-2" onChange={(e)=>setQuery(e.target.value)}/>
         </div>
         <div className="flex flex-col pt-5 pl-5">
 
-            {endpointsFiltered && endpoints.map((item) => <Endpoint
+            {endpointsFiltered && endpointsFiltered.map((item) => <Endpoint
                 url={item.url}
                 timestamp={item.timestamp}
                 method={item.method}
