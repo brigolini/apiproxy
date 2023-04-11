@@ -5,6 +5,11 @@ const dbFile = "endpoints.json";
 let calls = [];
 
 module.exports = {
+    init: function () {
+        if (!fs.existsSync(dbFile)) {
+            fs.writeFileSync(dbFile, JSON.stringify([]));
+        }
+    },
     addCall: function (endpoint, message, logger) {
        if (!calls.find(item=>item.endpoint === endpoint)){
            calls = [...calls, {endpoint, ...message}];

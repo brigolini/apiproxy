@@ -6,32 +6,29 @@ require("dotenv").config()
 const fs = require("fs");
 const {startExpressWithSocket} = require("./socket");
 const logger = require("./Logger");
+const sendSocketRefreshMessage = require("./socket").sendSocketRefreshMessage;
 
 let requestResolvers = [];
 let responseResolvers = [];
 const apiProxy = express();
-
-let mode = "LEARNING";
-//let mode = "CACHE";
 
 
 logger.info("Using the follow env files");
 logger.info(`Proxy segment: /${process.env.PROXY_SEGMENT}/*`);
 logger.info(`Destination: ${process.env.DESTINATION}`);
 
-const corsOptions = [{
+const corsOptions = {
         origin: "http://localhost:8080",
         credentials: true
-    },
-    {
-        origin: 'http://localhost:3000',
-        credentials: true
-    }
-];
+    };
 apiProxy.use(cors(corsOptions));
 apiProxy.use(`/${process.env.PROXY_SEGMENT}`, proxy(process.env.DESTINATION, {
     filter: function (req, res) {
-        return mode === "LEARNING";
+        const willCallServer = couch.retrieveAll().length === 0 || !couch
+            .retrieveAll()
+            .some(item => item.endpoint === req.url && item.method === req.method && (item.proxyStatus === undefined ||item.proxyStatus === "ENABLED"));
+        logger.info(`The endpoint ${req.url} ${willCallServer? `will be resolved by the server`:`will be resolved by the proxy`} `);
+        return willCallServer;
     },
     userResDecorator: function (proxyRes, proxyResData, userReq, userRes) {
         logger.info(`Proxy receive URL ${userReq.url}`);
@@ -43,20 +40,11 @@ apiProxy.use(`/${process.env.PROXY_SEGMENT}`, proxy(process.env.DESTINATION, {
         })
         return proxyResData
     },
+    proxyReqOptDecorator: function(proxyReqOpts, originalReq) {
+        proxyReqOpts.rejectUnauthorized = false
+        return proxyReqOpts;
+    }
 }))
-
-apiProxy.put("/mode/toggle",
-    function (req, res){
-        const newMode = mode === "CACHE"?"LEARNING":"CACHE";
-        logger.info(`Changing mode to ${newMode}`)
-
-        mode = newMode;
-        res.status(200).send(JSON.stringify({result:"Changed"}))
-    })
-
-apiProxy.get("/mode",function(req, res){
-    res.status(200).send(JSON.stringify({mode}))
-})
 
 apiProxy.get("/endpoints",function(req, res){
     res.status(200).send(JSON.stringify({endpoints:couch.retrieveAll()}))
@@ -75,8 +63,10 @@ apiProxy.all(`/${process.env.PROXY_SEGMENT}/*`, async (req, res) =>{
     responseResolvers.forEach(resolver=>{
         if (resolver.canResolve(req)){
             logger.info(`Proxying ${req.url} with resolver: ${resolver.getName()}`)
-            return resolver.resolve(req, res, couch)
+            sendSocketRefreshMessage(req.url.replace(`/${process.env.PROXY_SEGMENT}`,""));
+            return resolver.resolve(req, res, couch, logger)
         }
+        return res.status(404).send("Not found");
     })
 })
 
@@ -95,6 +85,8 @@ const addResolvers = (type) => {
 
 
 const port = process.env.API_PORT || 3003;
+logger.info("Initializing Database");
+couch.init();
 logger.info(`Getting ready to add resolvers from folder ${process.env.RESOLVER_FOLDER}`);
 logger.info(`Adding request resolvers`);
 requestResolvers = addResolvers("request");

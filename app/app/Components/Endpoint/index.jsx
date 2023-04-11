@@ -5,10 +5,20 @@ import {io} from "socket.io-client";
 
 const socket = io("http://localhost:3003",{transports: ["websocket"]});
 
-const Endpoint = ({url, method,status, proxyStatus, handleDelete, handleToggleStatus}) => {
+const Endpoint = ({url, method,status, proxyStatus, timestamp, handleDelete, handleToggleStatus}) => {
     const [editMode, setEditMode] = useState(false);
     const [fullJSON, setFullJSON] = useState("");
+    const [refreshed, setRefreshed] = useState(false);
+    setInterval(() => {
+        setRefreshed(false);
+    }, 3000);
     useEffect(() => {
+        socket.on("refresh", (urlCalled) => {
+            console.info(urlCalled);
+            if (url === urlCalled){
+               setRefreshed(true);
+            }
+        });
         socket.on("fullJSON", (data) => {
             setFullJSON(JSON.stringify(JSON.parse(data), null, 2));
         });
@@ -25,6 +35,8 @@ const Endpoint = ({url, method,status, proxyStatus, handleDelete, handleToggleSt
                     {status >=300 && status < 400 && <div className="bg-blue-600 w-9 rounded font-bold text-white flex justify-center"><span>{status}</span></div>}
                     {status >=400 && status < 500 && <div className="bg-red-600 w-9 rounded font-bold text-white flex justify-center"><span>{status}</span></div>}
                     {status >=500 && status < 600 && <div className="bg-purple-600 w-9 rounded font-bold text-white flex justify-center"><span>{status}</span></div>}
+                    <span>Cached at {(new Date(timestamp)).toLocaleTimeString()}</span>
+                    {refreshed && <span className="rounded-full bg-red-600 text-white px-3">Called</span>}
                 </span>
             </div>
             <div className="w-1/5 flex justify-start">

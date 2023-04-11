@@ -10,7 +10,9 @@ const emitActiveEndpoints = (socket) => {
         method: item.method,
         status: item.status,
         proxyStatus: item.proxyStatus,
+        timestamp: item.timestamp,
     }));
+
     socket.emit("endpoints",JSON.stringify({active:activeEndpoints}));
 }
 
@@ -54,12 +56,12 @@ const startExpressWithSocket = (app, port) => {
     return io;
 }
 
-const sendSocketMessage = (message) => {
-    io.sockets.emit("message",JSON.stringify(message));
+const sendSocketRefreshMessage = (url) => {
+    io.emit("refresh",url);
 }
 
 
 module.exports = {
     startExpressWithSocket,
-    sendSocketMessage,
+    sendSocketRefreshMessage,
 }
