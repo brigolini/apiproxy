@@ -46,11 +46,9 @@ module.exports = {
         });
     },
     changeCall: function (endpoint, message, logger) {
-        const call = calls.find(item => item.endpoint === endpoint);
-        call.method = message.method;
-        call.status = message.status;
-        call.body = message.body;
-        fs.writeFileSync(dbFile, JSON.stringify(calls), () => {
+        calls = calls.filter(item => item.endpoint !== endpoint);
+        calls = [...calls, message];
+        fs.writeFileSync(dbFile, JSON.stringify([...calls, message]), () => {
             logger.error(`Error on save data at ${dbFile}`)
         })
     },
